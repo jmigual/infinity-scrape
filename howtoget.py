@@ -3,6 +3,8 @@ import sqlite3
 import random
 import os
 
+print("This script is outdated and is using the old DB format. It will be updated soon.")
+
 if not os.path.exists("infinite-craft.db"):
     print(
         """There is no infinite-craft.db file!

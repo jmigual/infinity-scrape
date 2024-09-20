@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "infinity-scrape"
+version = "1.0.0"
+description = "Search for all the recipes in infinite craft"
+authors = ["Joan Marcè i Igual <jmigual@users.noreply.github.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.2.3"
+requests = "^2.32.3"
+backoff = "^2.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
