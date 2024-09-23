@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS "elements" (
 )
 
 
-def are_chars_in_string(chars, string):
+def are_chars_in_string(string):
+    chars = s.NON_SIMPLE_CHARS
     return bool(1 for c in chars if c in string)
 
 
@@ -70,7 +71,7 @@ def combine(combination):
     try:
         response = requests.get(
             "https://neal.fun/api/infinite-craft/pair",
-            params={"first": combination[0], "second": combination[1]},
+            params={"first": combination[0][0], "second": combination[1][0]},
             headers=s.HEADERS,
         )
 
@@ -106,10 +107,10 @@ def get_element_id(df_elements: pd.DataFrame, element: str):
 
 
 def recipe_exists(df: pd.DataFrame, df_elements: pd.DataFrame, combination: list):
-    elem_left = get_element_id(df_elements, combination[0])
-    elem_right = get_element_id(df_elements, combination[1])
+    id_left = combination[0][1]
+    id_right = combination[1][1]
 
-    return ((df["ingr1"] == elem_left) & (df["ingr2"] == elem_right)).any()
+    return ((df["ingr1"] == id_left) & (df["ingr2"] == id_right)).any()
 
 
 def insert_recipe(
@@ -167,20 +168,24 @@ def main():
     # Fetch current combinations from the database
     df = pd.read_sql_query("SELECT ingr1, ingr2, out FROM combination", conn)
     df_elements = pd.read_sql_query("SELECT id, element FROM elements", conn)
-    current = df_elements.loc[df_elements["element"] != NOTHING, "element"].tolist()
+    df_valid_elements = df_elements[df_elements["element"] != NOTHING]
+    current: dict[int, str] = pd.Series(
+        df_valid_elements["element"].values, index=df_valid_elements["id"]
+    ).to_dict()
 
     try:
         print("Starting, press CTRL+C or close this window to stop")
         print("Done...")
         while api_gives_info:
-            combination = list(sorted((random.choice(current), random.choice(current))))
+            ids = random.sample(list(current.keys()), 2)
+            combination = sorted([(current[ids[i]], ids[i]) for i in range(2)])
             checked += 1
 
             if s.SIMPLE_COMBINES:
-                if any(map(are_chars_in_string, s.NON_SIMPLE_CHARS, combination)):
+                if any(map(are_chars_in_string, [combination[0][0], combination[1][0]])):
                     continue
 
-            text = f"{combination[0]} + {combination[1]}"
+            text = f"{combination[0][0]} + {combination[1][0]}"
 
             prefix = "SKIP"
             if recipe_exists(df, df_elements, combination):
@@ -191,7 +196,7 @@ def main():
             if not result:
                 continue
 
-            out_elem = result["result"]
+            out_elem: str = result["result"]
             text += " -> " + out_elem
 
             prefix = "NOTHING"
